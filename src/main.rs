@@ -21,7 +21,10 @@
  */
 
 mod card;
+mod hand;
+
 use card::Card;
+use hand::Hand;
 use std::io;
 
 /* process
@@ -37,31 +40,28 @@ fn process(input: String)
     return;
   }
 
-  let mut cards = Vec::<Card>::new();
-
+  /* create a hand object and add the player's cards to it */
+  let mut hand = Hand::new();
   for card_desc in input.split_whitespace()
   {
-    cards.push(match Card::new(&card_desc)
+    hand.add(match Card::new(&card_desc)
     {
       Some(c) => c,
       None => return /* bail out on error */
     });
   }
 
-  for c in cards
-  {
-    print!("{} ", c.describe());
-  }
-  println!("");
+  /* calculate the strength of the hand */
+  hand.rank();
 }
 
+/* handle frontend IO */
 fn main()
 {
   /* read a line in from STDIN until EOF, at which point, give up */
   loop
   {
     let mut buffer = String::new();
-
     match io::stdin().read_line(&mut buffer)
     {
       Ok(bytes) =>
@@ -74,10 +74,10 @@ fn main()
         }
         else
         {
-          break;
+          break; /* escape to program exit */
         }
       },
-      Err(_e) => break
+      Err(_e) => break /* escape to program exit */
     }
   }
 }

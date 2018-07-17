@@ -4,6 +4,13 @@
  * (c) Chris Williams, 2018. Open-source software: see LICENSE
  */
 
+/* used to select a high or low ace */
+pub enum Ace
+{
+  Low, High
+}
+
+/* define the suit of the card */
 enum Suit
 {
   Heart,
@@ -12,16 +19,18 @@ enum Suit
   Spade
 }
 
+/* internal representation of the value of the card */
 enum Value
 {
   Two, Three, Four, Five, Six, Seven, Eight, Nine,
   Ten, Jack, Queen, King, Ace
 }
 
+/* the card object */
 pub struct Card
 {
-  value: Value,
-  suit: Suit
+  value: Value, /* internal representation of the value */
+  suit: Suit    /* suit of the card */
 }
 
 impl Card
@@ -80,12 +89,18 @@ impl Card
       }
     };
 
-    return Some(Card{ value: value, suit: suit });
+    let card = Card
+    {
+      value: value,
+      suit: suit
+    };
+
+    return Some(card);
   }
 
   /* describe
      Return a string describing the card */
-  pub fn describe(self) -> String
+  pub fn describe(&self) -> String
   {
     let mut desc = String::new();
     desc.push(match self.value
@@ -116,4 +131,30 @@ impl Card
     return desc;
   }
 
+  /* convert card value into an integer
+     => ace = Ace::High or Ace::Low to treat aces as high or low
+     <= integer between 1 (low ace) and 14 (high ace) */
+  pub fn to_int(&self, ace: Ace) -> u32
+  {
+    match self.value
+    {
+      Value::Two   => 2,
+      Value::Three => 3,
+      Value::Four  => 4,
+      Value::Five  => 5,
+      Value::Six   => 6,
+      Value::Seven => 7,
+      Value::Eight => 8,
+      Value::Nine  => 9,
+      Value::Ten   => 10,
+      Value::Jack  => 11,
+      Value::Queen => 12,
+      Value::King  => 13,
+      Value::Ace   => match ace
+      {
+        Ace::Low => 1,
+        Ace::High => 14
+      }
+    }
+  }
 }
