@@ -6,7 +6,9 @@
 
 use card::Card;
 use card::Suit;
+use card::Value;
 use card::Ace;
+use std::collections::HashMap;
 
 enum Strength
 {
@@ -58,21 +60,55 @@ impl Hand
     }).count()
   }
 
+  /* count up number of times each card value appears in the hand, and return the totals
+     as a hash table */
+  fn count_values(&mut self) -> HashMap<Value, usize>
+  {
+    let mut map = HashMap::<Value, usize>::new();
+
+    for card in self.cards.iter()
+    {
+      let value = card.value();
+      let count = match map.get(&value)
+      {
+        Some(i) => i + 1,
+        None    => 1
+      };
+
+      map.insert(value, count);
+    }
+
+    return map;
+  }
+
   /* work out the strength of the cards so far */
   pub fn rank(&mut self)
   {
-    /* detect flush: count up number of cards of each suit, and record highest number */
-    let hearts = self.count_suit(Suit::Heart);
-    let diamonds = self.count_suit(Suit::Diamond);
-    let clubs = self.count_suit(Suit::Club);
-    let spades = self.count_suit(Suit::Spade);
+    let mut flush = false;
+    let mut straight = false;
+    let mut trips = false;
 
-    println!("{} hearts {} diamonds {} clubs {} spades", hearts, diamonds, clubs, spades);
+    /* count up number of instances of each card value */
+    let mut values = self.count_values();
+    for (key, val) in values.iter()
+    {
+      println!("key {:?} value {}", key, val);
+    }
 
-    /* detect straight: sort in order, highest to lowest, treating ace as high */
+    /* detect flush: count up number of cards of each suit, and make a note if we
+       hit a five-card flush */
+    if self.count_suit(Suit::Heart)   == 5 ||
+       self.count_suit(Suit::Diamond) == 5 ||
+       self.count_suit(Suit::Club)    == 5 ||
+       self.count_suit(Suit::Spade)   == 5
+    {
+      flush == true;
+    }
+
+    /* sort in order, highest to lowest, treating ace as high */
     self.cards.sort_by(|a, b|
     {
-      b.to_int(Ace::High).cmp(&a.to_int(Ace::High))
+      b.to_int(Ace::Low).cmp(&a.to_int(Ace::Low))
     });
   }
 }

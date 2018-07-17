@@ -20,8 +20,9 @@ pub enum Suit
   Spade
 }
 
-/* internal representation of the value of the card */
-enum Value
+/* asbtracted representation of the value of the card */
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Value
 {
   Two, Three, Four, Five, Six, Seven, Eight, Nine,
   Ten, Jack, Queen, King, Ace
@@ -30,7 +31,7 @@ enum Value
 /* the card object */
 pub struct Card
 {
-  value: Value, /* internal representation of the value */
+  value: Value, /* abstracted representation of the value */
   suit: Suit    /* suit of the card */
 }
 
@@ -136,6 +137,12 @@ impl Card
   pub fn suit(&self) -> Suit
   {
     self.suit
+  }
+
+  /* return the value of the card */
+  pub fn value(&self) -> Value
+  {
+    self.value
   }
 
   /* convert card value into an integer
