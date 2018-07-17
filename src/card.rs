@@ -4,14 +4,8 @@
  * (c) Chris Williams, 2018. Open-source software: see LICENSE
  */
 
-/* used to select a high or low ace */
-pub enum Ace
-{
-  Low, High
-}
-
 /* define the suit of the card */
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Suit
 {
   Heart,
@@ -146,9 +140,8 @@ impl Card
   }
 
   /* convert card value into an integer
-     => ace = Ace::High or Ace::Low to treat aces as high or low
-     <= integer between 1 (low ace) and 14 (high ace) */
-  pub fn to_int(&self, ace: Ace) -> u32
+     <= integer between 2 and 14 (ace) */
+  pub fn to_int(&self) -> u32
   {
     match self.value
     {
@@ -164,11 +157,7 @@ impl Card
       Value::Jack  => 11,
       Value::Queen => 12,
       Value::King  => 13,
-      Value::Ace   => match ace
-      {
-        Ace::Low => 1,
-        Ace::High => 14
-      }
+      Value::Ace   => 14
     }
   }
 }

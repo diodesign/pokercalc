@@ -52,7 +52,8 @@ fn process(input: String)
   }
 
   /* calculate the strength of the hand */
-  hand.rank();
+  hand.calc();
+  println!("{:?}", hand.strength());
 }
 
 /* handle frontend IO */
