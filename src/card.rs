@@ -11,7 +11,8 @@ pub enum Ace
 }
 
 /* define the suit of the card */
-enum Suit
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum Suit
 {
   Heart,
   Diamond,
@@ -129,6 +130,12 @@ impl Card
     });
 
     return desc;
+  }
+
+  /* return the suit of the card */
+  pub fn suit(&self) -> Suit
+  {
+    self.suit
   }
 
   /* convert card value into an integer

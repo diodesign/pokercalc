@@ -5,6 +5,7 @@
  */
 
 use card::Card;
+use card::Suit;
 use card::Ace;
 
 enum Strength
@@ -48,19 +49,30 @@ impl Hand
     self.cards.push(card);
   }
 
+  /* return the numbber of cards in the hand with the given suit */
+  fn count_suit(&mut self, suit: Suit) -> usize
+  {
+    self.cards.iter().filter(|a|
+    {
+      a.suit() == suit
+    }).count()
+  }
+
   /* work out the strength of the cards so far */
   pub fn rank(&mut self)
   {
-    /* first sort in order, highest to lowest, treating ace as high */
+    /* detect flush: count up number of cards of each suit, and record highest number */
+    let hearts = self.count_suit(Suit::Heart);
+    let diamonds = self.count_suit(Suit::Diamond);
+    let clubs = self.count_suit(Suit::Club);
+    let spades = self.count_suit(Suit::Spade);
+
+    println!("{} hearts {} diamonds {} clubs {} spades", hearts, diamonds, clubs, spades);
+
+    /* detect straight: sort in order, highest to lowest, treating ace as high */
     self.cards.sort_by(|a, b|
     {
       b.to_int(Ace::High).cmp(&a.to_int(Ace::High))
     });
-
-    for c in self.cards.iter()
-    {
-      print!("{} ", c.describe());
-      println!("");
-    }
   }
 }
