@@ -7,7 +7,9 @@
 use card::Card;
 use card::Suit;
 use card::Value;
+
 use std::collections::HashMap;
+use std::cmp::Ordering;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Strength
@@ -123,14 +125,20 @@ impl Hand
       map.insert(value, count);
     }
 
-    /* turn map into sorted vector of totals */
+    /* turn map into sorted vector of totals for each card value */
     let mut list = Vec::<(Value, usize)>::new();
     for (value, count) in map.iter()
     {
       list.push((*value, *count));
     }
 
-    list.sort_by(|a, b| b.1.cmp(&a.1));
+    /* sort by card value count, prioritizing by value in a tie */
+    list.sort_by(|a, b| match b.1.cmp(&a.1)
+    {
+      Ordering::Less => Ordering::Less,
+      Ordering::Equal => b.0.to_u32().cmp(&a.0.to_u32()),
+      Ordering::Greater => Ordering::Greater
+    });
     return list;
   }
 
@@ -187,7 +195,7 @@ impl Hand
 
     /* detect five-card flush */
     let suits = self.count_suits();
-    if suits.first().unwrap().1 == 5
+    if suits.first().unwrap().1 >= 5
     {
       self.strength = Strength::Flush;
     }
@@ -280,10 +288,12 @@ impl Hand
       {
         let mut select = match self.strength
         {
-          Strength::FourofaKind | Strength::FullHouse => 2,
-          Strength::ThreeofaKind | Strength::TwoPair  => 3,
-          Strength::Pair                    => 4,
-          Strength::HighCard                => 5,
+          Strength::FourofaKind  => 2,
+          Strength::FullHouse    => 2,
+          Strength::ThreeofaKind => 3,
+          Strength::TwoPair      => 3,
+          Strength::Pair         => 4,
+          Strength::HighCard     => 5,
           _ => unreachable!()
         };
 
@@ -331,6 +341,7 @@ impl Hand
     let mut value_position = 5;
     for value in self.best.iter()
     {
+      println!("card slot {} value {}", value_position, value.to_char());
       value_position = value_position - 1;
       value_score = value_score + (value.to_u32() << (value_position * 4));
     }
