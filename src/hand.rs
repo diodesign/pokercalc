@@ -11,6 +11,19 @@ use card::Value;
 use std::collections::HashMap;
 use std::cmp::Ordering;
 
+/* describe number of cards with the same particular value are in the hand */
+struct ValueTotal
+{
+  value: Value,
+  total: usize
+}
+
+/* describe number of cards with the same particular suit are in the hand */
+struct SuitTotal
+{
+  total: usize
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Strength
 {
@@ -79,11 +92,10 @@ impl Hand
   }
 
   /* count up number of times each suit appears in the hand, and return a list
-     of the suits and their counts, sorted by count descending */
-  fn count_suits(&mut self) -> Vec<(Suit, usize)>
+     of the suits and their total, sorted by suit count descending */
+  fn count_suits(&mut self) -> Vec<SuitTotal>
   {
     let mut map = HashMap::<Suit, usize>::new();
-
     for card in self.cards.iter()
     {
       let suit = card.suit();
@@ -92,27 +104,25 @@ impl Hand
         Some(i) => i + 1,
         None    => 1
       };
-
       map.insert(suit, count);
     }
 
-    /* turn map into sorted vector of totals */
-    let mut list = Vec::<(Suit, usize)>::new();
-    for (suit, count) in map.iter()
+    /* turn map into sorted vector of totals. we're not interested in
+       the exact suit because they are all equal in hold 'em poker */
+    let mut list = Vec::<SuitTotal>::new();
+    for (_, count) in map.iter()
     {
-      list.push((*suit, *count));
+      list.push(SuitTotal { total: *count });
     }
-
-    list.sort_by(|a, b| b.1.cmp(&a.1));
+    list.sort_by(|a, b| b.total.cmp(&a.total));
     return list;
   }
 
   /* count up number of times each card value appears in the hand, and return a list
-     of the values present and their counts, sorted by count descending */
-  fn count_values(&mut self) -> Vec<(Value, usize)>
+     of the values present and their totals, sorted by value count descending */
+  fn count_values(&mut self) -> Vec<ValueTotal>
   {
     let mut map = HashMap::<Value, usize>::new();
-
     for card in self.cards.iter()
     {
       let value = card.value();
@@ -121,22 +131,21 @@ impl Hand
         Some(i) => i + 1,
         None    => 1
       };
-
       map.insert(value, count);
     }
 
-    /* turn map into sorted vector of totals for each card value */
-    let mut list = Vec::<(Value, usize)>::new();
+    /* turn map into vector of totals for each card value */
+    let mut list = Vec::<ValueTotal>::new();
     for (value, count) in map.iter()
     {
-      list.push((*value, *count));
+      list.push(ValueTotal { value: *value, total: *count });
     }
 
-    /* sort by card value count, prioritizing by value in a tie */
-    list.sort_by(|a, b| match b.1.cmp(&a.1)
+    /* sort by per-value total, prioritizing by card value in a tie */
+    list.sort_by(|a, b| match b.total.cmp(&a.total)
     {
       Ordering::Less => Ordering::Less,
-      Ordering::Equal => b.0.to_u32().cmp(&a.0.to_u32()),
+      Ordering::Equal => b.value.to_u32().cmp(&a.value.to_u32()),
       Ordering::Greater => Ordering::Greater
     });
     return list;
@@ -157,17 +166,17 @@ impl Hand
     let values = self.count_values();
 
     /* did we find four of a kind in top slot? */
-    if values.first().unwrap().1 == 4
+    if values.first().unwrap().total == 4
     {
       self.strength = Strength::FourofaKind;
     }
 
     /* did we find three of a kind? */
-    if values.first().unwrap().1 == 3
+    if values.first().unwrap().total == 3
     {
       /* is the value in the next slot a pair?
          if so, that's a full house */
-      if values.len() > 1 && values[1].1 == 2
+      if values.len() > 1 && values[1].total == 2
       {
         self.strength = Strength::FullHouse;
       }
@@ -179,10 +188,10 @@ impl Hand
     }
 
     /* did we find a pair? */
-    if values.first().unwrap().1 == 2
+    if values.first().unwrap().total == 2
     {
       /* did we find another pair in next slot? */
-      if values.len() > 1 && values[1].1 == 2
+      if values.len() > 1 && values[1].total == 2
       {
         self.strength = Strength::TwoPair;
       }
@@ -195,7 +204,7 @@ impl Hand
 
     /* detect five-card flush */
     let suits = self.count_suits();
-    if suits.first().unwrap().1 >= 5
+    if suits.first().unwrap().total >= 5
     {
       self.strength = Strength::Flush;
     }
@@ -237,10 +246,7 @@ impl Hand
           }
         },
 
-        None =>
-        {
-          straight_count = straight_count + 1;
-        }
+        None => straight_count = straight_count + 1
       }
 
       prev_value = Some(value);
@@ -306,7 +312,7 @@ impl Hand
         /* now select those cards for the best pile */
         for i in 0..select
         {
-          self.best.push(values[i].0);
+          self.best.push(values[i].value);
         }
       }
     }
