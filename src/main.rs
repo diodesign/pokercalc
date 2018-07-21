@@ -51,9 +51,9 @@ fn process(input: String)
     });
   }
 
-  /* calculate the strength of the hand */
+  /* calculate the strength of the hand and tell the player */
   hand.calc();
-  println!("{:?}", hand.strength());
+  println!("Your hand: {}", hand.describe());
 }
 
 /* handle frontend IO */

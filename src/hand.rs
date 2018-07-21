@@ -27,9 +27,10 @@ pub enum Strength
 
 pub struct Hand
 {
-  cards: Vec<Card>,
-  score: u64,
-  strength: Strength
+  cards: Vec<Card>,    /* all the cards in this hand (2 to 7) */
+  best: Vec<Value>,    /* all the relevant cards (2-5) to calculate the score */
+  score: u32,          /* final score from best 5 cards */
+  strength: Strength   /* type of hand from best 5 cards */
 }
 
 impl Hand
@@ -40,6 +41,7 @@ impl Hand
     Hand
     {
       cards: Vec::<Card>::new(),
+      best: Vec::<Value>::new(),
       score: 0,
       strength: Strength::Empty
     }
@@ -51,10 +53,27 @@ impl Hand
     self.cards.push(card);
   }
 
-  /* return hand strength */
-  pub fn strength(self) -> Strength
+  /* return string describing the hard */
+  pub fn describe(&self) -> String
   {
-    self.strength
+    match self.strength
+    {
+      Strength::RoyalFlush    => format!("royal flush"),
+      Strength::StraightFlush => format!("straight flush, {} high", self.best[0].to_str()),
+      Strength::FourofaKind   => format!("four of a kind, {}s", self.best[0].to_str()),
+      Strength::FullHouse     => format!("full house, {}s over {}s",
+                                         self.best[0].to_str(),
+                                         self.best[1].to_str()),
+      Strength::Flush         => format!("flush, {} high", self.best[0].to_str()),
+      Strength::Straight      => format!("straight, {} high", self.best[0].to_str()),
+      Strength::ThreeofaKind  => format!("three of a kind, {}s", self.best[0].to_str()),
+      Strength::TwoPair       => format!("two pair, {}s and {}s",
+                                         self.best[0].to_str(),
+                                         self.best[1].to_str()),
+      Strength::Pair          => format!("pair of {}s", self.best[0].to_str()),
+      Strength::HighCard      => format!("{} high", self.best[0].to_str()),
+      Strength::Empty         => format!("empty")
+    }
   }
 
   /* count up number of times each suit appears in the hand, and return a list
@@ -115,14 +134,15 @@ impl Hand
     return list;
   }
 
-  /* work out the strength of the cards so far */
+  /* work out the strength of the cards so far, and calculate a score for
+     the hand */
   pub fn calc(&mut self)
   {
     /* default to high card */
     self.strength = Strength::HighCard;
 
     /* sort cards in order, highest to lowest, treating ace as high */
-    self.cards.sort_by(|a, b| { b.to_int().cmp(&a.to_int()) });
+    self.cards.sort_by(|a, b| { b.value.to_u32().cmp(&a.value.to_u32()) });
 
     /* count up number of instances of each card value in this hand into a
        sorted list - high to low */
@@ -178,7 +198,7 @@ impl Hand
     for card in self.cards.iter()
     {
       /* inspect the current card to compare with previous value */
-      let value = card.to_int();
+      let value = card.value.to_u32();
       match prev_value
       {
         Some(v) =>
@@ -237,5 +257,85 @@ impl Hand
         self.strength = Strength::Straight;
       }
     }
+
+    /* select the values of the best cards from the hand */
+    match self.strength
+    {
+      /* take the highest card's value, there is no
+         kicker or tie card for these made five-card hands */
+      Strength::RoyalFlush | Strength::StraightFlush | Strength::Flush | Strength::Straight =>
+      {
+        let value = self.cards[0].value();
+        self.best.push(value);
+      },
+
+      /* take 2 or more cards from the hand, depending on type.
+         four of a kind:  XXXXY (X, Y = 2 cards)
+         full house:      XXXYY (X, Y = 2 cards)
+         three of a kind: XXXYZ (X, Y, Z = 3 cards)
+         two pair:        XXYYZ (X, Y, Z = 3 cards)
+         pair:            XXYZV (X, Y, Z, V = 4 cards)
+         high card takes 5 highest cards */
+      _ =>
+      {
+        let mut select = match self.strength
+        {
+          Strength::FourofaKind | Strength::FullHouse => 2,
+          Strength::ThreeofaKind | Strength::TwoPair  => 3,
+          Strength::Pair                    => 4,
+          Strength::HighCard                => 5,
+          _ => unreachable!()
+        };
+
+        /* cap select if there aren't enough cards to take */
+        if select > values.len()
+        {
+          select = values.len();
+        }
+
+        /* now select those cards for the best pile */
+        for i in 0..select
+        {
+          self.best.push(values[i].0);
+        }
+      }
+    }
+
+    /* here's how we score each hand from its cards.
+       each card value runs from 2 (two) to 14 (ace).
+       that range fits neatly in four bits. so use the lower bits to
+       compute the per-hand score, and high bits for the per-type base.
+
+       bbbb xxxx      xxxx      xxxx      xxxx      xxxx      <-- bits 0 to 23
+            1st best  2nd best  3rd best  4th best  5th best  <-- cards
+
+       the bbbb bits (bits 20-23) select the hand type (0-9) */
+
+    /* compute base score from type */
+    let base_score = match self.strength
+    {
+      Strength::RoyalFlush    => 9,
+      Strength::StraightFlush => 8,
+      Strength::FourofaKind   => 7,
+      Strength::FullHouse     => 6,
+      Strength::Flush         => 5,
+      Strength::Straight      => 4,
+      Strength::ThreeofaKind  => 3,
+      Strength::TwoPair       => 2,
+      Strength::Pair          => 1,
+      Strength::HighCard      => 0,
+      _ => unreachable!()
+    } << 20;
+
+    let mut value_score = 0;
+    let mut value_position = 5;
+    for value in self.best.iter()
+    {
+      value_position = value_position - 1;
+      value_score = value_score + (value.to_u32() << (value_position * 4));
+    }
+
+    self.score = base_score + value_score;
+    println!("Score: {:x}", self.score);
   }
 }
