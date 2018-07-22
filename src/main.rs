@@ -78,7 +78,8 @@ fn process(input: String)
   }
 
   print!("Opponent needs: ");
-  let mut outs = 0;
+  let mut winning_combos = 0;
+  let mut total_combos = 0;
 
   /* iterate over hand combinations */
   loop
@@ -100,8 +101,9 @@ fn process(input: String)
           if opponent.score() > hand.score()
           {
             print!("( {} {} ) ", hole1.describe(), hole2.describe());
-            outs = outs + 1;
+            winning_combos = winning_combos + 1;
           }
+          total_combos = total_combos + 1;
         }
       },
 
@@ -109,8 +111,9 @@ fn process(input: String)
     }
   }
 
-  println!("\nOuts: {}  Cards remaining: {}  Odds: {}",
-           outs, 52 - card_count, ((outs as f32) / (52.0 - card_count as f32)) * 100.0);
+  println!("\nOdds: {}% ({} out of {})",
+           ((winning_combos as f32) / (total_combos as f32)) * 100.0,
+           winning_combos, total_combos);
 }
 
 /* handle frontend IO */
