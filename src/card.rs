@@ -4,7 +4,7 @@
  * (c) Chris Williams, 2018. Open-source software: see LICENSE
  */
 
-/* asbtracted representation of the value of a card */
+/* abstracted representation of the value of a card */
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Value
 {
@@ -112,7 +112,7 @@ impl Suit
 pub struct Card
 {
   pub value: Value, /* abstracted representation of the value */
-  suit: Suit    /* suit of the card */
+  pub suit: Suit    /* suit of the card */
 }
 
 impl Card

@@ -15,16 +15,18 @@
  * of having those cards. Repeat until you hit Control-C or Control-D (or send an EOF)
  *
  * Hint: Use these percentages to decide whether it is worth calling a bet or raise,
- * based on the size of the amount to pay versus what's in the pot.
+ * based on the size of the amount to pay versus what's in the pot, and your opponent's range
  *
  * (c) Chris Williams, 2018. Open-source software: see LICENSE
  */
 
 mod card;
 mod hand;
+mod deck;
 
 use card::Card;
 use hand::Hand;
+use deck::Deck;
 
 use std::io;
 
@@ -41,20 +43,71 @@ fn process(input: String)
     return;
   }
 
-  /* create a hand object and add the player's cards to it */
+  /* create two hand objects: one with the player's hole and community cards,
+     and the other with just the community cards - which will be used by the opponent */
+  let mut card_count = 0;
   let mut hand = Hand::new();
+  let mut community = Hand::new();
   for card_desc in input.split_whitespace()
   {
-    hand.add(match Card::new(&card_desc)
+    match card_count
     {
-      Some(c) => c,
-      None => return /* bail out on error */
-    });
+      /* first two hards go to the player */
+      0 | 1 => hand.add(Card::new(&card_desc).unwrap()),
+
+      /* all remaining cards are the player's and community cards */
+      _ =>
+      {
+        hand.add(Card::new(&card_desc).unwrap());
+        community.add(Card::new(&card_desc).unwrap());
+      }
+    }
+
+    card_count = card_count + 1;
   }
 
-  /* calculate the strength of the hand and tell the player */
+  /* calculate the strength of the hand, and tell the player */
   hand.calc();
   println!("Your hand: {}", hand.describe());
+
+  /* now create a deck excluding the cards we can see */
+  let mut deck = Deck::new();
+  for card in hand.cards().iter()
+  {
+    deck.remove(card);
+  }
+
+  print!("Opponent needs: ");
+
+  /* iterate over hand combinations */
+  loop
+  {
+    /* grab this card, run it through the others, and remove it.
+       we're taking every two hole cards from the remaining deck and
+       running them against the community cards to see which hole cards
+       beat the player's */
+    match deck.cards().pop()
+    {
+      Some(hole1) =>
+      {
+        for hole2 in deck.cards().iter()
+        {
+          let mut opponent = community.clone();
+          opponent.add(hole1);
+          opponent.add(*hole2);
+          opponent.calc();
+          if opponent.score() > hand.score()
+          {
+            print!("( {} {} ) ", hole1.describe(), hole2.describe());
+          }
+        }
+      },
+
+      None => break
+    }
+  }
+
+  println!("");
 }
 
 /* handle frontend IO */

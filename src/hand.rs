@@ -1,5 +1,6 @@
 /* hand.rs
- * Store a hand and calculate its strength
+ * Store a hand as an object and calculate its strength from its five best cards.
+ * A hand can be 2 or 5 to 7 cards in size, although only its best five matter.
  *
  * (c) Chris Williams, 2018. Open-source software: see LICENSE
  */
@@ -40,6 +41,7 @@ pub enum Strength
   Empty
 }
 
+#[derive(Debug, Clone)]
 pub struct Hand
 {
   cards: Vec<Card>,    /* all the cards in this hand (2 to 7) */
@@ -66,6 +68,17 @@ impl Hand
   pub fn add(&mut self, card: Card)
   {
     self.cards.push(card);
+  }
+
+  /* return the vector of cards in the hand */
+  pub fn cards(&self) -> &Vec<Card>
+  {
+    &self.cards
+  }
+
+  pub fn score(&self) -> u32
+  {
+    self.score
   }
 
   /* return string describing the hard */
@@ -347,12 +360,10 @@ impl Hand
     let mut value_position = 5;
     for value in self.best.iter()
     {
-      println!("card slot {} value {}", value_position, value.to_char());
       value_position = value_position - 1;
       value_score = value_score + (value.to_u32() << (value_position * 4));
     }
 
     self.score = base_score + value_score;
-    println!("Score: {:x}", self.score);
   }
 }
