@@ -78,8 +78,9 @@ fn process(input: String)
   }
 
   print!("Opponent needs: ");
-  let mut winning_combos = 0;
-  let mut total_combos = 0;
+  let unknown_cards = deck.cards().len();
+  let mut better_combos = 0;
+  let mut running_odds = 0.0;
 
   /* iterate over hand combinations */
   loop
@@ -101,9 +102,9 @@ fn process(input: String)
           if opponent.score() > hand.score()
           {
             print!("( {} {} ) ", hole1.describe(), hole2.describe());
-            winning_combos = winning_combos + 1;
+            running_odds = running_odds + (1.0 / unknown_cards as f32).powi(2);
+            better_combos = better_combos + 1;
           }
-          total_combos = total_combos + 1;
         }
       },
 
@@ -111,9 +112,8 @@ fn process(input: String)
     }
   }
 
-  println!("\nOdds: {}% ({} out of {})",
-           ((winning_combos as f32) / (total_combos as f32)) * 100.0,
-           winning_combos, total_combos);
+  println!("\n{} better card combinations out of {} unseen cards", better_combos, unknown_cards);
+  println!("{:.1}% chance opponent has better cards", running_odds * 100.0);
 }
 
 /* handle frontend IO */
