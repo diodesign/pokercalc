@@ -79,7 +79,6 @@ fn process(input: String)
 
   print!("Opponent needs: ");
   let unknown_cards = deck.cards().len();
-  let mut better_combos = 0;
   let mut running_odds = 0.0;
 
   /* iterate over hand combinations */
@@ -102,8 +101,12 @@ fn process(input: String)
           if opponent.score() > hand.score()
           {
             print!("( {} {} ) ", hole1.describe(), hole2.describe());
-            running_odds = running_odds + (1.0 / unknown_cards as f32).powi(2);
-            better_combos = better_combos + 1;
+
+            /* keep a running total of the odds for drawing these two hole cards given
+               from the deck of unseen cards. we multiply by two to take into account
+               the fact AK is the same as KA */
+            running_odds = running_odds +
+                        2.0 * ((1.0 / unknown_cards as f32) * (1.0 / (unknown_cards - 1) as f32));
           }
         }
       },
@@ -112,8 +115,7 @@ fn process(input: String)
     }
   }
 
-  println!("\n{} better card combinations out of {} unseen cards", better_combos, unknown_cards);
-  println!("{:.1}% chance opponent has better cards", running_odds * 100.0);
+  println!("\n{:.1}% chance opponent has better cards", running_odds * 100.0);
 }
 
 /* handle frontend IO */
