@@ -77,9 +77,10 @@ fn process(input: String)
     deck.remove(card);
   }
 
-  print!("Opponent needs: ");
   let unknown_cards = deck.cards().len();
   let mut running_odds = 0.0;
+  let mut opponent_outs = String::new();
+  let mut opponent_outs_count = 0;
 
   /* iterate over hand combinations */
   loop
@@ -100,7 +101,9 @@ fn process(input: String)
           opponent.calc();
           if opponent.score() > hand.score()
           {
-            print!("( {} {} ) ", hole1.describe(), hole2.describe());
+            opponent_outs.push_str(format!("( {} {} ) ",
+                                   hole1.describe(), hole2.describe()).as_str());
+            opponent_outs_count = opponent_outs_count + 1;
 
             /* keep a running total of the odds for drawing these two hole cards given
                from the deck of unseen cards. we multiply by two to take into account
@@ -115,7 +118,16 @@ fn process(input: String)
     }
   }
 
-  println!("\n{:.1}% chance opponent has better cards", running_odds * 100.0);
+  if opponent_outs_count > 20
+  {
+    println!("Opponent has potentially {} hands that can beat you", opponent_outs_count);
+  }
+  else
+  {
+    println!("Opponent needs: {}", opponent_outs);
+  }
+
+  println!("{:.2}% chance opponent has better cards", running_odds * 100.0);
 }
 
 /* handle frontend IO */
